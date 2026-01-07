@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文物识别 Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #dbe8ff, #f3f4f6);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .phone {
+      width: 360px;
+      height: 780px;
+      border-radius: 36px;
+      background: #000;
+      padding: 12px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .phone-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+      background: #fff;
+      overflow: hidden;
+      position: relative;
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+    .screen.active { opacity: 1; }
+
+    .screen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* 结果页自定义布局 */
+    .result {
+      flex-direction: column;
+      background: #f5f6f8;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .result-image-wrap {
+      background: #fff;
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .result-image-wrap img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      border-radius: 12px;
+    }
+    .result-card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    }
+    .result-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .result-sub {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 12px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .row:last-child { border-bottom: none; }
+    .label { color: #888; }
+    .value { font-weight: 500; }
+
+    /* 手指点击提示 */
+    .finger {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.9);
+      position: absolute;
+      background: radial-gradient(circle at 30% 30%, #fff, #e5e7eb);
+      box-shadow: 0 0 0 0 rgba(255,255,255,0.6);
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      animation: tap 1s ease-out forwards;
+      z-index: 10;
+    }
+    @keyframes tap {
+      0% { opacity: 0; transform: translate(-50%,-50%) scale(0.7); box-shadow: 0 0 0 0 rgba(255,255,255,0.8);}
+      40% { opacity: 1; transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 0 8px rgba(255,255,255,0);}
+      100% { opacity: 0; transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 0 14px rgba(255,255,255,0);}
+    }
+
+    /* 顶部说明文字（方便在视频里看懂） */
+    .caption {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      right: 16px;
+      color: #fff;
+      font-size: 13px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      text-align: center;
+      z-index: 3;
+      background: rgba(0,0,0,0.3);
+      padding: 6px 12px;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="phone-inner">
+      <!-- 屏幕 1：首页 -->
+      <div class="screen active" id="screen-home">
+        <img src="home.jpg" alt="首页">
+        <div class="caption">1. 打开小程序首页，点击「拍照识文物」</div>
+      </div>
+
+      <!-- 屏幕 2：相机界面 -->
+      <div class="screen" id="screen-camera">
+        <img src="camera.jpg" alt="相机界面">
+        <div class="caption">2. 进入拍照页面，选择从相册上传</div>
+      </div>
+
+      <!-- 屏幕 3：相册选择（用文物图代替列表） -->
+      <div class="screen" id="screen-album">
+        <img src="artifact.jpg" alt="相册选择">
+        <div class="caption">3. 从相册中选择「鹿角立鹤」图片</div>
+      </div>
+
+      <!-- 屏幕 4：识别结果页 -->
+      <div class="screen result" id="screen-result">
+        <div class="result-image-wrap">
+          <img src="artifact.jpg" alt="鹿角立鹤">
+        </div>
+        <div class="result-card">
+          <div class="result-title">识别结果：鹿角立鹤</div>
+          <div class="result-sub">AI 已为你识别出该文物信息</div>
+          <div class="row">
+            <div class="label">文物名</div>
+            <div class="value">鹿角立鹤</div>
+          </div>
+          <div class="row">
+            <div class="label">年代</div>
+            <div class="value">战国</div>
+          </div>
+          <div class="row">
+            <div class="label">博物馆</div>
+            <div class="value">湖北省博物馆</div>
+          </div>
+          <div class="row">
+            <div class="label">类别</div>
+            <div class="value">青铜器</div>
+          </div>
+        </div>
+        <div class="caption">4. 展示识别结果与文物信息</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const order = ['home', 'camera', 'album', 'result'];
+    const durations = [2500, 2500, 2000, 4000]; // 每个场景停留时间
+    let index = 0;
+
+    function showScreen(i) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const id = 'screen-' + order[i];
+      document.getElementById(id).classList.add('active');
+
+      // 模拟手指点击
+      const phoneInner = document.querySelector('.phone-inner');
+      const finger = document.createElement('div');
+      finger.className = 'finger';
+
+      if (order[i] === 'home') {
+        // 首页底部中间按钮
+        finger.style.left = '50%';
+        finger.style.top = '86%';
+      } else if (order[i] === 'camera') {
+        // 左下角相册图标
+        finger.style.left = '20%';
+        finger.style.top = '88%';
+      } else if (order[i] === 'album') {
+        // 中间图片
+        finger.style.left = '50%';
+        finger.style.top = '50%';
+      } else {
+        // 结果页轻触
+        finger.style.left = '70%';
+        finger.style.top = '65%';
+      }
+
+      phoneInner.appendChild(finger);
+      setTimeout(() => {
+        if (phoneInner.contains(finger)) {
+          phoneInner.removeChild(finger);
+        }
+      }, 900);
+    }
+
+    function playSequence() {
+      showScreen(index);
+      setTimeout(() => {
+        index++;
+        if (index < order.length) {
+          playSequence();
+        } else {
+          // 循环播放
+          setTimeout(() => {
+            index = 0;
+            playSequence();
+          }, 1000);
+        }
+      }, durations[index]);
+    }
+
+    window.onload = () => {
+      playSequence();
+    };
+  </script>
+</body>
+</html>
+
